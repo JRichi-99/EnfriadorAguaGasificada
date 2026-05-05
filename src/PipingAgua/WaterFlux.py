@@ -1,54 +1,100 @@
 import numpy as np
 import CoolProp.CoolProp as cp 
 from Coil import Coil
-
-class Bomba:
-    def __init__(self, Q_dp : function):
-        self.Q_dp = Q_dp
-
-class Botella:
-    def __init__(self, Ti, hi):
-        self.T = Ti
-        self.h = hi
-
-    def get_Re(self, Q):
-        # Área transversal = np.pi * self.d_in**2 / 4
-        v = Q / (np.pi * self.d_in**2 / 4)
-        return self.rho * v * self.d_in / self.mu
-
-    def reynolds_critico(self):
-        return 2300 * (1 + 8.6 * (self.d_in / self.d)**0.45)
-    
-    def recalc_fluid(self, T, P):
-        self.T = T
-        self.P = P
-        self.mu = cp.PropsSI('V', 'T', T, 'P', P, 'Water') 
-        self.rho = cp.PropsSI('D', 'T', T, 'P', P, 'Water') 
-
-    def velocidad_critica(self):
-        # Despejando v de Re = rho * v * D / mu  --->  v = Re * mu / (rho * D)
-        return self.reynolds_critico() * self.mu / (self.rho * self.d_in)
-    
-    def flujo_volumetrico_critico(self):
-        area = np.pi * self.d_in**2 / 4
-        return self.velocidad_critica() * area
-    
-    def Nu_interno(self, Re):
-        m = 0.5 + 0.2903 * (self.d_in / self.d)**0.194
-        Pr = cp.PropsSI('Pr', 'T', self.T, 'P', self.P, 'Water')
-        Prw = cp.PropsSI('Pr', 'T', self.Tw, 'P', self.P, 'Water')
-        Nu = 3.66 + 0.08 * (1 + 0.8 * (self.d_in / self.d)**0.9) * Re**m * Pr**(1/3) * (Pr / Prw)**0.14
-        
-        return Nu, Nu * 0.85, Nu * 1.15
-
+import fluids as fl
+import copy  # Añadido para copiar diccionarios de forma segura
 
 class SystemWaterFlux:
-    def __init__(self, bomba : Bomba, botella : Botella, coil: Coil, tramos: dict):
-        self.bomba = bomba
-        self.botella = botella
-        self.coil = coil
-        self.tramos = tramos
-    
-    def calcular_flujo(self, ):
+    def __init__(self):
+        pass
 
+    def pressure_drop_pipe(self, tramos, Q, mu, rho, g=9.81, to_iterate = False):
+        n = len(tramos)
         
+        # Copia profunda para no alterar la lista de diccionarios original
+        data = copy.deepcopy(tramos) 
+        
+        # Inicialización de arreglos de NumPy para vectorización
+        D = np.zeros(n)
+        Lx = np.zeros(n)
+        Ly = np.zeros(n)
+        A = np.zeros(n)
+        F = np.zeros(n)
+        V = np.zeros(n)
+        E = np.zeros(n)
+        Re = np.zeros(n)
+        Ks = np.zeros(n)
+
+        # Iteración sobre cada tramo para extraer propiedades y calcular variables
+        for i in range(n):
+            tramo = tramos[i]
+            largo = tramo["l"]
+            diametro = tramo["d"]
+            material = tramo["mat"]
+            direccion = tramo["dir"]
+            
+            # Asignación de longitud según la dirección del tubo (horizontal o vertical)
+            if direccion == "h":
+                Lx[i] = largo
+            elif direccion == "v":
+                Ly[i] = largo
+                
+            Ks[i] = tramo["ks"]
+            D[i] = diametro
+            
+            # Cálculo del área transversal y actualización del diccionario
+            A[i] = np.pi * (diametro / 2)**2
+            data[i]["area"] = A[i]
+            
+            # Cálculo de la velocidad del fluido
+            V[i] = Q / A[i]
+            data[i]["velo"] = V[i]
+            
+            # Cálculo del número de Reynolds
+            Re[i] = (rho * V[i] * D[i]) / mu
+            data[i]["Re"] = Re[i]
+            
+            # Obtención de la rugosidad absoluta y el factor de fricción de Darcy
+            E[i] = fl.friction.material_roughness(material)
+            data[i]["E"] = E[i]
+            
+            F[i] = fl.friction_factor(Re[i], E[i] / D[i])  
+            data[i]["F"] = F[i]
+
+        # Caída de carga (h) debida a la fricción en tramos horizontales y verticales
+        delta_h_friction = F * (Lx / D) * (V**2 / (2 * g)) + F * (Ly / D) * (V**2 / (2 * g))
+
+        # Caída de carga debida a la diferencia de altura (gravedad)
+        delta_h_height = Ly
+
+        # Caída de carga debida a los accesorios (fittings)
+        delta_h_fittings = Ks * (V**2 / (2 * g))
+
+        # Balance de energía total usando la ecuación de Bernoulli
+        # Asumiendo Pin y Pout como atmosféricas
+        total_delta_h = sum(delta_h_friction) + sum(delta_h_height) + sum(delta_h_fittings) + (V[-1]**2 / (2 * g)) - (V[0]**2 / (2 * g))
+        
+        if to_iterate: # Si se desea calcular una bomba para el metodo de newton-raphson
+            return total_delta_h
+        return total_delta_h, delta_h_friction, delta_h_height, delta_h_fittings, data
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
