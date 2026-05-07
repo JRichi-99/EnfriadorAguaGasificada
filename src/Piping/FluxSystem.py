@@ -41,6 +41,7 @@ class FluxSystem():
             if isinstance(element, SingularityLoss):
                 element.set_in_out(self.system[i-1], self.system[i+1])
 
+    # Funcion deprecada
     def set_caudal(self, Q, rho, mu, P0):
         self.perdida_altura = [None] * self.n_elements
         self.pressures = [None] * (self.n_elements + 1)
@@ -62,7 +63,7 @@ class FluxSystem():
 
         return dh, self.pressures
 
-    def get_perdida_altura(self, Q, rho, mu):
+    def get_perdida_altura_closed(self, Q, rho, mu):
         dh = 0
         for i , element_id in enumerate(self.tubes):
             element, id = element_id
@@ -74,12 +75,21 @@ class FluxSystem():
             dh += element.set_perdida_altura()
 
         return dh, dh*rho*9.81
+    
+    def get_perdida_altura_open(self, Q, rho, mu, P0, P1):
+        dh, dp = self.get_perdida_altura_closed(Q,rho,mu)
+        dh = (P1-P0)/rho/9.81  + (self.system[0].u**2-self.system[-1].u**2)/2/9.81 + dh
+        return dh, dh*rho*9.81
 
-    def cross_system_pump(self, rho, mu, verbose=False):
+
+    def cross_system_pump(self, rho, mu, pump_f, Q_guess, verbose=False, open = False , P0 = 101325, P1 = 101325):
         def cross_dp(Q):
             Q_eval = abs(Q)
-            dh, dp_sys = self.get_perdida_altura(Q_eval, rho, mu)
-            dp_pump = Pa4m3s(Q_eval) 
+            if not open:
+                dh, dp_sys = self.get_perdida_altura_closed(Q_eval, rho, mu)
+            if open:
+                dh, dp_sys = self.get_perdida_altura_open(Q_eval, rho, mu, P0, P1)
+            dp_pump = pump_f(Q_eval) 
             return dp_pump - dp_sys
 
         Q_guess = 3.25e-5
@@ -89,8 +99,8 @@ class FluxSystem():
             Q_op = abs(Q_op)
             
             Q_op_lmin = Q_op * 60000
-            dp_op = Pa4m3s(Q_op)
-            dh_op, _ = self.get_perdida_altura(Q_op, rho, mu) 
+            dp_op = pump_f(Q_op)
+            dh_op = dp_op/rho/9.81
 
             if verbose:
                 print("\n" + "═" * 45)
@@ -110,7 +120,6 @@ class FluxSystem():
             return None, None, None, None
 
 
-        return Q_op, Q_op_lmin, dp_op 
 
             
             

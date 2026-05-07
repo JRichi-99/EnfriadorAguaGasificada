@@ -16,9 +16,10 @@ class Shell(Tube):
     
         self.re_crit = 100 
 
-
-    def set_friction_factor(self):
-        pass
+    def set_reynolds(self, rho, mu):
+        self.re = self.u*rho*self.d_hidraulico/mu
+        self.check_regimen()
+        return
         
 
     
