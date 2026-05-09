@@ -16,7 +16,6 @@ class Tube:
         self.area_in = np.pi*d_in*lenght
         self.thickness = (d_out-d_in)/2
 
-        
         self.material = material
         self.roughness = fl.friction.material_roughness(material)*1e-3
         self.conductivity = ht.k_material(ht.nearest_material(material))
