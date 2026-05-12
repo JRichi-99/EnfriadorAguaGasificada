@@ -12,7 +12,7 @@ class Tube:
         self.area_seccion_in = np.pi*d_in**2/4
         self.vol_in = self.area_seccion_in*lenght
         self.area_out = np.pi*d_out*lenght
-        self.vol_out = np.pi*d_out**2/4
+        self.vol_out = np.pi*d_out**2/4*lenght
         self.area_in = np.pi*d_in*lenght
         self.thickness = (d_out-d_in)/2
 

@@ -9,8 +9,8 @@ class Shell(Tube):
         self.contain = contain
 
         self.vol_in_free = self.vol_in - self.contain.vol_out
-        self.weet_area = self.area_in + self.contain.area_out 
-        self.d_hidraulico = 4*self.vol_in_free/self.weet_area
+        self.wetted_area = self.area_in + self.contain.area_out 
+        self.d_hidraulico = 4*self.vol_in_free/self.wetted_area
         
         self.vol_porosity = self.vol_in_free/self.vol_in
         self.area_seccion_in = self.vol_porosity*np.pi*self.d_in**2/4
@@ -19,7 +19,16 @@ class Shell(Tube):
         self.drag_factor = None
         self.ht_nu = None
         self.ht_h = None
-        
+    
+    def add_mass(self, d_mass, h_mass):
+        self.vol_in_free = self.vol_in_free - np.pi*(d_mass/2)**2*h_mass
+        self.wetted_area = self.wetted_area + np.pi*d_mass*h_mass
+        self.d_hidraulico = 4*self.vol_in_free/self.wetted_area
+        self.vol_porosity = self.vol_in_free/self.vol_in
+        self.area_seccion_in = self.vol_porosity*np.pi*self.d_in**2/4
+
+
+
     def set_reynolds(self, rho, mu):
         self.re = self.u*rho*self.d_hidraulico/mu
         self.check_regimen()
@@ -45,7 +54,7 @@ class Shell(Tube):
         return self.ht_nu
     
     def set_convection_h(self, k):
-        self.ht_h = self.ht_nu * k / self.d_in
+        self.ht_h = self.ht_nu * k / self.d_hidraulico
         return self.ht_h
 
     def get_ht(self, pr, mu, mu_w, k):
