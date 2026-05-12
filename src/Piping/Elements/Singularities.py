@@ -5,6 +5,7 @@ class SingularityLoss():
         self.in_conection = None
         self.out_conection = None
         self.perdida_alt = None
+        self.regime = None
     
     def set_in_out(self, in_conection, out_conection):
         self.in_conection = in_conection

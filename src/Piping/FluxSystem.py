@@ -9,6 +9,7 @@ class FluxSystem():
         self.system = []
         self.tubes = []
         self.singularities = []
+        self.volume = 0
     
     def add_element(self, element):
         self.system.append(element)
@@ -36,6 +37,16 @@ class FluxSystem():
                 continue
             if isinstance(element, SingularityLoss):
                 element.set_in_out(self.system[i-1], self.system[i+1])
+    
+    def get_volume(self):
+        self.volume = 0
+        for element in self.system:
+            if isinstance(element, Shell):
+                self.volume += element.vol_in_free
+            elif isinstance(element, Tube):
+                self.volume += element.vol_in
+        return self.volume
+    
 
 
 

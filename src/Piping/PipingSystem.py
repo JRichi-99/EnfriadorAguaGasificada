@@ -50,7 +50,7 @@ class PipingSystem(FluxSystem):
                 print(" UNTO DE OPERACIÓN DEL SISTEMA ".center(45, " "))
                 print("═" * 45)
                 print(f" Caudal volumétrico : {Q_op_lmin:>8.3f} L/min")
-                print(f" Caudal másico      : {Q_op:>8.2e} m³/s")
+                print(f" Caudal volumétrico      : {Q_op:>8.2e} m³/s")
                 print(f" Presión de cruce   : {dp_op:>8.1f} Pa")
                 print(f" Pérdida de altura  : {dh_op:>8.3f} m.c.a.")
                 print("═" * 45 + "\n")

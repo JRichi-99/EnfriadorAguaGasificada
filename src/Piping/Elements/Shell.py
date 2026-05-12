@@ -17,35 +17,41 @@ class Shell(Tube):
     
         self.re_crit = 100 
         self.drag_factor = None
+        self.ht_nu = None
+        self.ht_h = None
         
     def set_reynolds(self, rho, mu):
         self.re = self.u*rho*self.d_hidraulico/mu
         self.check_regimen()
         return self.re
     
-    def set_drag_factor(self):
-        self.drag_factor = (0.3164 / self.re**0.25) * (1 + 0.095 * (self.d_in / self.curvature_d)**0.5 * self.re**0.25)
+    def set_friction_factor(self):
+        self.drag_factor = (0.3164 / self.re**0.25) * (1 + 0.095 * (self.d_in / self.contain.curvature_d)**0.5 * self.re**0.25)
         return self.drag_factor
     
     def set_perdida_altura(self):
         self.perdida_alt_friccion = self.drag_factor * (self.lenght / self.d_in) * (self.u**2 / (2 * 9.81))
-        self.perdida_alt_altura = np.sin(np.deg2rad(self.orientation)) * self.altura
+        self.perdida_alt_altura = np.sin(np.deg2rad(self.orientation)) * self.lenght
         self.perdida_alt = self.perdida_alt_altura + self.perdida_alt_friccion
         return self.perdida_alt
 
-    def set_Nu(self, pr, mu, muw):
+    def set_Nu(self, pr, mu, mu_w):
         if self.re <= 6000 and self.re >= 50:
             self.ht_nu = 0.6*self.re**0.5*pr**0.31
         elif self.re > 6000 and self.re < 10000:
             self.ht_nu = 0.224*self.re**0.6*pr**0.33
         else:
-            self.ht_nu = 0.36*self.re**0.55*pr**0.333*(mu/muw)**0.14
-        return self.nu
+            self.ht_nu = 0.36*self.re**0.55*pr**0.333*(mu/mu_w)**0.14
+        return self.ht_nu
     
     def set_convection_h(self, k):
         self.ht_h = self.ht_nu * k / self.d_in
         return self.ht_h
 
+    def get_ht(self, pr, mu, mu_w, k):
+        self.set_Nu(pr,mu,mu_w)
+        return self.set_convection_h(k)
+    
     
 
     

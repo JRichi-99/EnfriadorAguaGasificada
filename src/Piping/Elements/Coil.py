@@ -37,29 +37,32 @@ class Coil(Tube):
         self.perdida_alt = self.perdida_alt_altura + self.perdida_alt_friccion
         return self.perdida_alt
     
-    def get_Nu_laminar(self, pr, prw, re):
+    def get_Nu_laminar(self, pr, pr_w, re):
         m = 0.5 + 0.2903 * (self.d_in / self.curvature_d)**0.194
         term_curvatura = 1 + 0.8 * (self.d_in / self.curvature_d)**0.9
-        return 3.66 + 0.08 * term_curvatura * re**m * pr**(1/3) * (pr / prw)**0.14
+        return 3.66 + 0.08 * term_curvatura * re**m * pr**(1/3) * (pr / pr_w)**0.14
 
-    def get_Nu_turb(self, pr, prw, mu, muw, re):
-        friccion_factor = (0.3164/re**0.25+0.03*np.sqrt(self.d_in/self.curvature_d))*(muw/mu)**0.27
-        return ((friccion_factor/8*re*pr)/(1+12.7*np.sqrt(friccion_factor/8)*(pr**(2/3)-1))) * (pr / prw)**0.14
+    def get_Nu_turb(self, pr, pr_w, mu, mu_w, re):
+        friccion_factor = (0.3164/re**0.25+0.03*np.sqrt(self.d_in/self.curvature_d))*(mu_w/mu)**0.27
+        return ((friccion_factor/8*re*pr)/(1+12.7*np.sqrt(friccion_factor/8)*(pr**(2/3)-1))) * (pr / pr_w)**0.14
 
-    def set_Nu(self, pr, prw, mu, muw):
+    def set_Nu(self, pr, pr_w, mu, mu_w):
         if self.re <= self.re_crit:
-            self.ht_nu = self.get_Nu_laminar(pr,prw, self.re)
+            self.ht_nu = self.get_Nu_laminar(pr,pr_w, self.re)
         elif self.re > 2.2e4:
-            self.ht_nu = self.get_Nu_turb(pr,prw,mu,muw, self.re)
+            self.ht_nu = self.get_Nu_turb(pr,pr_w,mu,mu_w, self.re)
         else:
             gamma = (2.2e4 - self.re)/(2.2e4 - self.re_crit)
-            self.ht_nu = gamma*self.get_Nu_laminar(pr,prw,self.re_crit) + (1-gamma)*self.get_Nu_turb(pr,prw,mu,muw, 2.2e4)
-        return self.nu
+            self.ht_nu = gamma*self.get_Nu_laminar(pr,pr_w,self.re_crit) + (1-gamma)*self.get_Nu_turb(pr,pr_w,mu,mu_w, 2.2e4)
+        return self.ht_nu
     
     def set_convection_h(self, k):
         self.ht_h = self.ht_nu * k / self.d_in
         return self.ht_h
-        
+    
+    def get_ht(self, pr, pr_w, mu, mu_w, k):
+        self.set_Nu(pr,pr_w,mu,mu_w)
+        return self.set_convection_h(k)
     
 
             
