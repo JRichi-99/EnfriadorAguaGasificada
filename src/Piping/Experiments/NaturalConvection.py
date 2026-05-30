@@ -1,3 +1,4 @@
+import numpy as np
 tiempo = [i for i in range(15)] # Equivalente a list(range(15))
 
 twater = [
@@ -17,3 +18,5 @@ t_lauda = [
     8.5, 8.6, 8.8, 8.9, 9.0, 
     9.0, 8.9, 9.0, 8.9, 8.8
 ]
+
+print(np.mean(np.array(t_lauda)))

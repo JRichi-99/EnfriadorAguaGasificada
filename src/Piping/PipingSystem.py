@@ -7,7 +7,7 @@ class PipingSystem(FluxSystem):
         super().__init__()
         self.pressures = []
         self.perdida_altura = []
-
+    
     def get_perdida_altura_closed(self, Q, rho, mu):
         dh = 0
         for i , element_id in enumerate(self.tubes):
