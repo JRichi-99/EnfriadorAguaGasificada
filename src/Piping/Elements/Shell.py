@@ -27,8 +27,6 @@ class Shell(Tube):
         self.vol_porosity = self.vol_in_free/self.vol_in
         self.area_seccion_in = self.vol_porosity*np.pi*self.d_in**2/4
 
-
-
     def set_reynolds(self, rho, mu):
         self.re = self.u*rho*self.d_hidraulico/mu
         self.check_regimen()
